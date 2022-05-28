@@ -1,0 +1,2 @@
+module OSM1 {
+}
