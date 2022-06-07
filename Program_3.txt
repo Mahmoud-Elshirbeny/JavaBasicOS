@@ -6,10 +6,4 @@ assign b readFile a
 semSignal file
 semWait userOutput
 print b
-print b
-print b
-print b
-print b
-print b
-print b
 semSignal userOutput

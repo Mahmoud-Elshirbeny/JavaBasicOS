@@ -1,2 +1,2 @@
-module OSM1 {
+module OS {
 }

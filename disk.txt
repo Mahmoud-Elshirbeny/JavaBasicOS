@@ -1,0 +1,20 @@
+id:1
+state:BLOCKED
+pc:14
+lowerBound:20
+upperBound:39
+a:2
+ 
+ 
+@temp:2
+line 0:semWait userInput
+line 1:input
+line 2:assign a @temp
+line 3:semSignal userInput
+line 4:semWait userInput
+line 5:input
+line 6:assign b @temp
+line 7:semSignal userInput
+line 8:semWait userOutput
+line 9:printFromTo a b
+line 10:semSignal userOutput

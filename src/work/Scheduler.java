@@ -14,14 +14,14 @@ public class Scheduler {
 	public int timeSlice;
 	public int clockCycles;
 	public boolean printChosen = false;
-	
+	public Kernel kernel;
 	
 	public Scheduler() {
 		current = null;
 		ready =  new LinkedList<Process>();
 		blocked  = new LinkedList<Process>();
 		newProcess = new PriorityQueue<UpcomingProcess>();
-		slicePerProcess = 5;
+		slicePerProcess = 2;
 		timeSlice = slicePerProcess;
 		clockCycles = 0;
 	}
@@ -32,16 +32,20 @@ public class Scheduler {
 	}
 	
 	public void run(Kernel kernel) {
+		this.kernel=kernel;
 		while((!ready.isEmpty())||(!blocked.isEmpty())||(!newProcess.isEmpty())||current!=null) {
-			
+			boolean done = false;
 			System.out.println("Clock Cycle: " + clockCycles);
 			System.out.println("------------");
+			kernel.printMem();
+			System.out.println("-------------------------------------------------------------------");
 			
 			if(newProcess.peek()!=null&&newProcess.peek().time==clockCycles) {
 				Process npp=newProcess.remove().proc;
 				ready.add(npp);
 				System.out.println("Added process " + npp.name + " to the ready queue.");
 				System.out.println("------------");
+				kernel.createProcess(npp);
 			}
 			
 			clockCycles++;
@@ -50,21 +54,35 @@ public class Scheduler {
 			}
 			timeSlice--;
 			if(current!=null) {
+				kernel.changeProcessState(current.id, "EXECUTING");
 				boolean processDone = kernel.executeNextCommand(current);
 				if(processDone) {
 					System.out.println("Process: " + current.name + " Finished.");
 					System.out.println("------------");
+					kernel.changeProcessState(current.id, "FINISHED");
 					printQueues();
 					printChosen = false;
 					pickNewProcess();
 				}
 				else{if(timeSlice == 0) {
 					ready.add(current);
-					pickNewProcess();
+					kernel.changeProcessState(current.id, "READY");
+					done = pickNewProcess();
 				}}
 				System.out.println("-------------------------------------------------------------------");
 			}
-		
+			if(!done) {
+			kernel.printMem();
+			System.out.println("-------------------------------------------------------------------");
+			
+			kernel.printDisk();
+			System.out.println("-------------------------------------------------------------------");
+			
+			kernel.contin();
+			System.out.println("------------------------------------------------------------------------------------------------------------------------------------------------------");
+			
+			
+			}
 		}
 	}
 	
@@ -72,6 +90,7 @@ public class Scheduler {
 		blocked.add(p);
 		System.out.println(p.name + " got blocked.");
 		System.out.println("------------");
+		kernel.changeProcessState(p.id, "BLOCKED");
 		printQueues();
 		printChosen = false;
 		pickNewProcess();
@@ -82,18 +101,19 @@ public class Scheduler {
 		blocked.remove(p);
 		System.out.println("Unblocked process:  " + p.name + ", And gave it mutex: " + mutexName +".");
 		System.out.println("------------");
+		kernel.changeProcessState(p.id, "READY");
 		ready.add(p);
 	}
 	
-	public void pickNewProcess() {
+	public boolean pickNewProcess() {
 		if(ready.isEmpty()&&newProcess.isEmpty()) {
 			System.out.println("Done.");
 			current=null;
-			return;
+			return true;
 		}
 		if(ready.isEmpty()) {
 			current=null;
-			return;
+			return false;
 		}
 		System.out.println("Before choosing new process:");
 		System.out.println();
@@ -104,12 +124,14 @@ public class Scheduler {
 		System.out.println("After choosing new process:");
 		System.out.println();
 		printQueues();
+		return false;
 	}
 	public void printQueues() {
 		if(ready.isEmpty()&&blocked.isEmpty()&&current==null)
 			return;
 		if(current!=null&&printChosen) {
 			System.out.println("Chosen: " + current.name);
+			kernel.changeProcessState(current.id, "EXECUTING");
 			System.out.println("------------");
 		}
 		System.out.println("Ready Queue: ");

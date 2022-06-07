@@ -1,7 +1,9 @@
 semWait userInput
-assign var1 input
-assign var2 input
+assign a input
+semSignal userInput
+semWait userInput
+assign b input
 semSignal userInput
 semWait userOutput
-printFromTo var1 var2
+printFromTo a b
 semSignal userOutput

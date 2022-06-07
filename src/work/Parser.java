@@ -1,14 +1,9 @@
 package work;
-import java.io.BufferedReader;
-import java.io.File;  // Import the File class
-import java.io.FileNotFoundException;  // Import this class to handle errors
+import java.io.BufferedReader;  // Import the File class  // Import this class to handle errors
 import java.io.FileReader;
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Scanner; // Import the Scanner class to read text files
-import dataTypes.Process;
+import java.util.ArrayList; // Import the Scanner class to read text files
+
 
 public class Parser {
 	
@@ -16,33 +11,38 @@ public class Parser {
 		
 	}
 	
-	public ArrayList<String[]> result(String name){
+	public Object[] result(String name){
 		ArrayList<String> commands = new ArrayList<String>();
-		ArrayList<String[]> finalCommands = new ArrayList<String[]>();
 		String currentLine = "";
 		FileReader fileReader;
 		try {
 			fileReader = new FileReader(name);
 			BufferedReader br = new BufferedReader(fileReader);
 			while ((currentLine = br.readLine()) != null) {
-				commands.add(currentLine);
-				// Parsing the currentLine String
+				
+				String [] splitLine= currentLine.split(" ");
+				if(splitLine.length>2){
+					if (splitLine[2].equals("input")) {
+					commands.add(splitLine[2]);
+					commands.add(splitLine[0]+" "+ splitLine[1]+" "+"@temp");
+					continue;
+					}
+					else {if(splitLine[2].equals("readFile")) {
+						commands.add(splitLine[2]+" "+splitLine[3]);
+						commands.add(splitLine[0]+" "+ splitLine[1]+" "+"@temp");
+						continue;
+					}
+					}
+					
 				}
+				
+				commands.add(currentLine);
+			}
+			br.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		for(int i = 0; i<commands.size();i++) {
-			String [] result= ((String)commands.get(i)).split(" ");
-			finalCommands.add(result);
-		}
-		return finalCommands;
+		return commands.toArray();
 	}
-
-public static void main(String[] args) {
-	
-
-}
-
 }

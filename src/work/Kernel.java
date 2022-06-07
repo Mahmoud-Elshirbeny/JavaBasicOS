@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import dataTypes.Memory;
 import dataTypes.Process;
-import dataTypes.Process;
-import dataTypes.Variable;
 
 public class Kernel {
 	
@@ -21,6 +19,8 @@ public class Kernel {
 	public Parser parser;
 	public Scheduler scheduler;
 	public Interpeter interpeter;
+	public static int processCounter = 0;
+	
 	
 	public Kernel() {
 		file = new Mutex();
@@ -32,10 +32,26 @@ public class Kernel {
 		interpeter = new Interpeter();
 	}
 	
-	public void createProcess(String name, int time) {
-		ArrayList<String[]> commands = parser.result(name);
-		Process p = new Process(name,commands);
+	public void addNewProcess(String name, int time) {
+		processCounter++;
+		Process p = new Process(name,processCounter);
 		scheduler.add(p, time);
+	}
+	
+	public void createProcess(Process p) {
+		
+		Object[] commands =parser.result(p.name);
+		memory.addProcess(p.id, "READY", 9, commands);
+	}
+	
+	public void addVariable(int id, String name, String value) {
+		if(name.equals("@temp")) {
+			memory.storeTemp(id, value);
+		}
+		else {
+			memory.storeVariable(id, name, value);
+		}
+		
 	}
 	
 	public void startSystem() {
@@ -43,20 +59,33 @@ public class Kernel {
 	}
 	
 	public boolean executeNextCommand(Process p) {
-		if(p.pointer<p.commands.size()) {
+		String line = memory.returnNextLine(p.id);
+		if(line=="done") return true;
+		
 		p.print(scheduler.timeSlice);
-		boolean done = interpeter.decode(p.nextCommand(), p, this);
-		if(done) p.pointer++;	
-		}
-		boolean processDone = (p.pointer>=p.commands.size());
-		return processDone;
+		System.out.println("EXECUTING: "+line);
+		interpeter.decode(line, p, this);
+		
+		
+		return false;
 	}
 	
 	public Object input() {
 		Scanner sc= new Scanner(System.in);    //System.in is a standard input stream  
 		System.out.print("Enter your input: ");  
 		Object a= sc.nextLine();
+		
 		return a;
+		
+	}
+	
+	public Object contin() {
+		Scanner sc= new Scanner(System.in);    //System.in is a standard input stream  
+		System.out.print("Press enter to continue.");  
+		Object a= sc.nextLine();
+		
+		return a;
+		
 	}
 	
 	public String readFile(String path) {
@@ -71,6 +100,7 @@ public class Kernel {
 			while ((currentLine = br.readLine()) != null) {
 				text.add(currentLine);
 				}
+			br.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -83,15 +113,7 @@ public class Kernel {
 	}
 	
 	public void assign(Process p, String desiredName, Object value) {
-		for(int i = 0; i<memory.content.size();i++) {
-			if (memory.content.get(i).name.equals(desiredName)&&memory.content.get(i).owner.equals(p)) {
-				memory.content.get(i).value=value;
-				return;
-			}
-		}
-		Variable v = new Variable(desiredName, value, p);
-		memory.add(v);
-		
+		memory.storeVariable(p.id, desiredName, (String)value);
 	}
 	
 	public void writeFile(String n, Object d) {
@@ -175,12 +197,20 @@ public class Kernel {
 	
 	public Object variableToValue(String name, Process p) {
 		if(p==null) return name;
-		for(int i = 0;i < memory.content.size();i++) {
-			if(memory.content.get(i).name.equals(name)&&memory.content.get(i).owner.equals(p)) {
-				return memory.content.get(i).value;
-			}
-		}
+		name=memory.getValue(p.id, name);
 		return name;
+	}
+	
+	public void printMem() {
+		memory.print();
+	}
+	
+	public void changeProcessState(int id, String state) {
+		memory.changeProcessState(id, state);
+	}
+	
+	public void printDisk() {
+		memory.printDisk();
 	}
 
 	public static void main(String[] args) {
